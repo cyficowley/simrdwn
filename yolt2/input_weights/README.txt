@@ -1,1 +1,0 @@
-Find weights at: https://pjreddie.com/darknet/yolo/
