@@ -25,15 +25,13 @@ RUN apt-get update \
 		tmux \
 		wget \
 		build-essential \
-			libopencv-dev \
-			python3-opencv \
 	&& apt-get clean \
 	&& rm -rf /var/lib/apt/lists/*
 
 RUN git clone https://github.com/cyficowley/simrdwn
+RUN cd /simrdwn/yolt3 && make
 
 SHELL ["/bin/bash", "-c"]
-ENV PATH /opt/conda/bin:$PATH
 
 WORKDIR /
 EXPOSE 6006 80
