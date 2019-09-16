@@ -23,8 +23,6 @@ import copy
 import utils
 import post_process
 import add_geo_coords
-import parse_tfrecord
-import preprocess_tfrecords
 import slice_im
 
 sys.stdout.flush()
@@ -217,17 +215,7 @@ def update_args(args):
         args.label_map_path = os.path.join(args.train_data_dir,
                                            args.label_map_path)
 
-    # make label_map_dic (key=int, value=str), and reverse
-    if len(args.label_map_path) > 0:
-        args.label_map_dict = preprocess_tfrecords.load_pbtxt(
-            args.label_map_path, verbose=False)
-        # ensure dict is 1-indexed
-        if min(list(args.label_map_dict.keys())) != 1:
-            print("Error: label_map_dict (", args.label_map_path, ") must"
-                  " be 1-indexed")
-            return
-    else:
-        args.label_map_dict = {}
+    args.label_map_dict = {}
 
     # retersed labels
     args.label_map_dict_rev = {v: k for k, v in args.label_map_dict.items()}

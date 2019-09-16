@@ -97,8 +97,8 @@ python /simrdwn/simrdwn/core/simrdwn.py \
 	--framework yolt3 \
 	--mode train \
 	--outname yolt_combined \
-	--yolt_cfg_file /simrdwn/yolt3/cfg/yolov3.cfg \
-	--weight_file /simrdwn/yolt3/input_weights/yolov3.weights \
+	--yolt_cfg_file /simrdwn/yolt3/cfg/yolov3-tiny.cfg \
+	--weight_file /simrdwn/yolt3/input_weights/yolov3-tiny.weights \
 	--yolt_train_images_list_file /simrdwn/new_data/train.txt \
 	--label_map_path /simrdwn/new_data/class_labels.pbtxt \
 	--max_batches 1300 \
