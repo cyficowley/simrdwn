@@ -83,6 +83,10 @@ RUN source activate simrdwn \
 
 RUN git clone https://github.com/cyficowley/simrdwn
 RUN cd /simrdwn/yolt3 && make clean && make
+RUN source activate simrdwn \
+	&& conda install -n simrdwn \
+		falcon \ 
+		gunicorn
 
 SHELL ["/bin/bash", "-c"]
 

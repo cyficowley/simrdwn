@@ -113,8 +113,8 @@ python /simrdwn/simrdwn/core/simrdwn.py \
   --outname yolt_test_combined \
   --label_map_path /simrdwn/new_data/class_labels.pbtxt \
   --train_model_path TODO \
-  --weight_file /simrdwn/results/train_yolt3_yolt_combined_2019_09_14_01-03-58/yolov3_final.weights \
-  --yolt_cfg_file /simrdwn/yolt3/cfg/yolov3.cfg \
+  --weight_file /simrdwn/results/train_yolt3_yolt_combined_2019_09_17_07-44-15/yolov3-tiny_final.weights \
+  --yolt_cfg_file /simrdwn/yolt3/cfg/yolov3-tiny.cfg \
   --testims_dir /simrdwn/new_data/test_data \
   --keep_test_slices 0 \
   --test_slice_sep __ \

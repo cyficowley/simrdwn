@@ -1,4 +1,5 @@
-#!/usr/bin/env python2
+# to start gunicorn -b 0.0.0.0:80 simrdwn:app
+
 # -*- coding: utf-8 -*-
 """
 Created on Thu Jun 16 14:11:56 2016
@@ -7,7 +8,8 @@ Created on Thu Jun 16 14:11:56 2016
 
 """
 
-from __future__ import print_function
+import falcon
+import json
 import os
 import sys
 import time
@@ -18,9 +20,7 @@ import argparse
 import shutil
 import copy
 import cv2
-# import logging
-# import tensorflow as tf
-
+import falcon
 import utils
 import post_process
 import add_geo_coords
@@ -166,26 +166,37 @@ def execute(args):
         return post_process.get_final_data(df_refine, groupby=groupby, label_map_dict=args["label_map_dict"])
 
 
-def main():
-    args = { 
-        "image": cv2.imread("/simrdwn/new_data/test_data/MATA128018591.png"),
-        "slice_sizes": [824],
-        "framework": "yolt3",
-        "yolt_cfg_file_tot": "/simrdwn/yolt3/cfg/yolov3.cfg",
-        "weight_file_tot": "/simrdwn/yolt3/final_weights/yolov3_final.weights",
-        "mode": "test",
-        "yolt_classnum": 3,
-        "test_list_loc": "/simrdwn/temp/test_splitims_input_files.txt",
-        "label_map_dict": {0:"dank", 1:"yeet", 2:"yote"},
-        "edge_buffer_test": 1,
-        "slice_overlap": 0.2,
-        "temp_dir":"/simrdwn/temp",
-        "confidence_threshold":0.2
-    }
+class GetDefects(object):
+    def on_post(self, req, resp):
+        query = falcon.uri.decode(req.query_string)
+        queries = query.split("&")
+        b64 = req.stream.read()
+        encoded_data = b64.split(',')[1]
+        nparr = np.fromstring(encoded_data.decode('base64'), np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR + cv2.IMREAD_IGNORE_ORIENTATION)
 
-    execute(args)
+        args = { 
+            "image": img,
+            "slice_sizes": [824],
+            "framework": "yolt3",
+            "yolt_cfg_file_tot": "/simrdwn/yolt3/cfg/yolov3.cfg",
+            "weight_file_tot": "/simrdwn/yolt3/final_weights/yolov3_final.weights",
+            "mode": "test",
+            "yolt_classnum": 3,
+            "test_list_loc": "/simrdwn/temp/test_splitims_input_files.txt",
+            "label_map_dict": {0:"dank", 1:"yeet", 2:"yote"},
+            "edge_buffer_test": 1,
+            "slice_overlap": 0.2,
+            "temp_dir":"/simrdwn/temp",
+            "confidence_threshold":0.2
+        }
+
+        output_array = execute(args)
+
+        resp.status = falcon.HTTP_200
+        resp.body = (json.dumps(output_array))
 
 
-if __name__ == "__main__":
-
-    main()
+app = falcon.API()
+get_defects = GetDefects()
+app.add_route('/get_defects', get_defects)
