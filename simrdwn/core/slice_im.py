@@ -35,7 +35,8 @@ def slice_im(img, out_dir ,sliceHeight=256, sliceWidth=256,
     dy = int((1. - overlap) * sliceHeight)
 
     image_list = []
-    shutil.rmtree(out_dir)
+    if(os.path.isdir(out_dir)):
+        shutil.rmtree(out_dir)
     os.mkdir(out_dir)
 
     for y0 in range(0, image0.shape[0], dy):  # sliceHeight):
@@ -55,8 +56,15 @@ def slice_im(img, out_dir ,sliceHeight=256, sliceWidth=256,
             window_c = image0[y:y + sliceHeight, x:x + sliceWidth]
             # get black and white image
             window = cv2.cvtColor(window_c, cv2.COLOR_BGR2GRAY)
-            path = os.path.join(out_dir, str(n_ims)+".png")
-            cv2.imwrite(path, window_c)
-            image_list.append(path)
+
+            outpath = os.path.join(
+                    out_dir,
+                    str(n_ims) + slice_sep + str(y) + '_' + str(x) + '_'
+                    + str(sliceHeight) + '_' + str(sliceWidth)
+                    + '_' + str(pad) + '_' + str(win_w) + '_' + str(win_h)
+                    + ".png")
+
+            cv2.imwrite(outpath, window_c)
+            image_list.append(outpath)
 
     return image_list

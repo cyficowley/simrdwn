@@ -17,6 +17,7 @@ import numpy as np
 import argparse
 import shutil
 import copy
+import cv2
 # import logging
 # import tensorflow as tf
 
@@ -33,7 +34,7 @@ def yolt_command(yolt_cfg_file_tot='',
                  results_dir='',
                  yolt_loss_file='',
                  mode='train',
-                 yolt_object_labels_str='',
+                 label_map_dict='',
                  yolt_classnum=1,
                  nbands=3,
                  gpu=-1,
@@ -49,8 +50,9 @@ def yolt_command(yolt_cfg_file_tot='',
     ##########################
 
     c_arg_list = [
-        './yolt3/darknet',
-        0,
+        '/simrdwn/yolt3/darknet',
+        "-i",
+        "0",
         "yolt3",
         "valid",
         yolt_cfg_file_tot,
@@ -58,10 +60,10 @@ def yolt_command(yolt_cfg_file_tot='',
         'null',
         "0",
         str(yolt_nms_thresh),
-        yolt_train_images_list_file_tot,
+        'null',
         results_dir,
         test_list_loc,
-        yolt_object_labels_str,
+        ",".join(label_map_dict.values()),
         str(yolt_classnum),
         str(nbands),
         yolt_loss_file,
@@ -77,31 +79,19 @@ def yolt_command(yolt_cfg_file_tot='',
 
 
 ###############################################################################
-def split_test_im(img, slided_image_dir, slice_sizes=[416], slice_overlap=0.2, test_slice_sep='__', zero_frac_thresh=0.5):
+def split_test_im(img, temp_dir, test_list_loc="", slice_sizes=[416], slice_overlap=0.2, test_slice_sep='__', zero_frac_thresh=0.5):
 
-    image_list = slice_im.slice_im(img, slided_image_dir,
+    image_list = slice_im.slice_im(img, temp_dir,
                         slice_sizes[0], slice_sizes[0],
                         zero_frac_thresh=zero_frac_thresh,
                         overlap=slice_overlap,
                         slice_sep=test_slice_sep)
-    print("sliced image into {} peices".format(len(image_slices)))
-    return image_list
+    print("sliced image into {} peices".format(len(image_list)))
+    
+    with open(test_list_loc, "w") as f:
+        for path in image_list:
+            f.write(path + "\n")
 
-
-###############################################################################
-def prep_test_files(img, slice_sizes=[416], slice_overlap=0.2, test_slice_sep='__', zero_frac_thresh=0.5):
-    t0 = time.time()
-    image_list = split_test_im(img,
-                          slice_sizes=slice_sizes,
-                          slice_overlap=slice_overlap,
-                          test_slice_sep=test_slice_sep,
-                          zero_frac_thresh=zero_frac_thresh)
-
-
-    cmd_time_str = 'Length of time to split test files: {} seconds'.format(t1 - t0)
-    print(cmd_time_str)
-
-    return image_list
 
 
 ###############################################################################
@@ -117,17 +107,21 @@ def run_test(framework='YOLT3',
              test_box_rescale_frac=1.0,
              rotate_boxes=False,
              min_retain_prob=0.025,
-             test_list_loc=""):
+             test_list_loc="",
+             results_dir=""):
     """Evaluate multiple large images"""
 
     t0 = time.time()
-    os.system(infer_cmd)  # run_cmd(outcmd)
+    os.system(infer_cmd)
     t1 = time.time()
 
+    yolt_test_classes_files = []
+    for classes in label_map_dict.values():
+        yolt_test_classes_files.append(os.path.join(results_dir, classes + ".txt"))
 
     df_tot = post_process.post_process_yolt_test_create_df(
-        [], "",
-        testims_dir_tot=test_list_loc,
+        yolt_test_classes_files, "",
+        testims_dir_tot=results_dir,
         slice_sizes=slice_sizes,
         slice_sep=test_slice_sep,
         edge_buffer_test=edge_buffer_test,
@@ -139,82 +133,62 @@ def run_test(framework='YOLT3',
 
 ###############################################################################
 def execute(args):
-    """
-    Execute train or test
-
-    Arguments
-    ---------
-    args : Namespace
-        input arguments
-    train_cmd1 : str
-        Training command
-    test_cmd_tot : str
-        Testing command
-    test_cmd_tot2 : str
-        Testing command for second scale (optional)
-
-    Returns
-    -------
-    None
-    """
     
-    image_slices = prep_test_files(img=args.image, slice_sizes=args.slice_sizes, slice_overlap=args.slice_overlap)
+    split_test_im(img=args["image"], test_list_loc=args["test_list_loc"], temp_dir=args["temp_dir"], slice_sizes=args["slice_sizes"], slice_overlap=args["slice_overlap"])
 
 
-    yolt_cmd = yolt_command(
-        args.framework, yolt_cfg_file_tot=args.yolt_cfg_file_tot,
-        weight_file_tot=args.weight_file_tot,
-        yolt_object_labels_str=args.yolt_object_labels_str,
-        yolt_classnum=args.yolt_classnum,
-        yolt_train_images_list_file_tot=args.yolt_train_images_list_file_tot,
-        test_list_loc=args.test_list_loc)
+    yolt_cmd = yolt_command(yolt_cfg_file_tot=args["yolt_cfg_file_tot"],
+        weight_file_tot=args["weight_file_tot"],
+        label_map_dict=args["label_map_dict"],
+        yolt_classnum=args["yolt_classnum"],
+        test_list_loc=args["test_list_loc"],
+        results_dir=args["temp_dir"])
 
     df_tot = run_test(infer_cmd=yolt_cmd,
-                            framework=args.framework,
-                            slice_sizes=args.slice_sizes,
-                            test_list_loc=args.test_list_loc,
-                            label_map_dict=args.label_map_dict,
-                            edge_buffer_test=args.edge_buffer_test)
+                            framework=args["framework"],
+                            slice_sizes=args["slice_sizes"],
+                            test_list_loc=args["test_list_loc"],
+                            label_map_dict=args["label_map_dict"],
+                            edge_buffer_test=args["edge_buffer_test"],
+                            results_dir=args["temp_dir"])
 
     if len(df_tot) == 0:
         print("No detections found!")
     else:
         # save to csv
-        df_tot.to_csv(args.val_df_path_aug, index=False)
+        df_tot.to_csv(args["val_df_path_aug"], index=False)
 
     # refine for each plot_thresh (if we have detections)
     if len(df_tot) > 0:
-        for plot_thresh_tmp in args.plot_thresh:
+        for plot_thresh_tmp in args["plot_thresh"]:
             groupby = 'Image_Path'
             groupby_cat = 'Category'
             df_refine = post_process.refine_df(df_tot,
                                                 groupby=groupby,
                                                 groupby_cat=groupby_cat,
-                                                nms_overlap_thresh=args.nms_overlap_thresh,
+                                                nms_overlap_thresh=args["nms_overlap_thresh"],
                                                 plot_thresh=plot_thresh_tmp,
                                                 verbose=False)
             
-            return post_process.plot_refined_df(df_refine, groupby=groupby, label_map_dict=args.label_map_dict_tot)
+            return post_process.plot_refined_df(df_refine, groupby=groupby, label_map_dict=args["label_map_dict_tot"])
 
 
 def main():
     args = { 
-        "image": None,
+        "image": cv2.imread("/simrdwn/new_data/test_data/MATA128018587.png"),
         "slice_sizes": [824],
         "framework": "yolt3",
         "yolt_cfg_file_tot": "/simrdwn/yolt3/cfg/yolov3.cfg",
-        "weight_file_tot": "/simrdwn/final_weights/current_weights.weights",
+        "weight_file_tot": "/simrdwn/yolt3/final_weights/yolov3_final.weights",
         "mode": "test",
-        "yolt_object_labels_str": "/simrdwn/new_data/class_labels.pbtxt",
         "yolt_classnum": 3,
-        "test_list_loc": "/simrdwn/data/test_data",
-        "label_map_dict": {0:"yeet", 1:"dab", 2:"dank"},
+        "test_list_loc": "/simrdwn/temp/test_splitims_input_files.txt",
+        "label_map_dict": {0:"dank", 1:"yeet", 2:"yote"},
         "edge_buffer_test": 1,
-        "slice_overlap": 0.2
+        "slice_overlap": 0.2,
+        "temp_dir":"/simrdwn/temp"
     }
-   
 
-    
     execute(args)
 
 

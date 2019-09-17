@@ -269,6 +269,7 @@ def augment_df(df,
         x0l, x1l, y0l, y1l = [], [], [], []
         bad_idxs = []
         for index, row in df.iterrows():
+            print(row)
             bounds, coords = get_global_coords(
                 row,
                 edge_buffer_test=edge_buffer_test,

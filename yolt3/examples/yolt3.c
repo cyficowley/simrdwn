@@ -440,7 +440,7 @@ void validate_yolt3(char *cfgfile, char *weightfile, char *valid_list_loc,
             if (count%10 == 0){
                 fprintf(stderr, "%d, validate id: %s\n", i, id);
             }
-
+            
             float *X = val_resized[t].data;
             network_predict(net, X);
             int w = val[t].w;
@@ -448,6 +448,7 @@ void validate_yolt3(char *cfgfile, char *weightfile, char *valid_list_loc,
             int nboxes = 0;
             detection *dets = get_network_boxes(net, w, h, thresh, 0.5, map, 0, &nboxes);
             if (nms) do_nms_sort(dets, nboxes, classes, iou_thresh);
+            fprintf(stderr, "FOUND %d\n", nboxes);
             print_yolt_detections(fps, id, dets, nboxes, classes, w, h);
             // if (coco){
             //     print_cocos(fp, path, dets, nboxes, classes, w, h);
@@ -460,6 +461,7 @@ void validate_yolt3(char *cfgfile, char *weightfile, char *valid_list_loc,
             free(id);
             free_image(val[t]);
             free_image(val_resized[t]);
+            fprintf(stderr, "finished subimage\n");
             count++;
         }
     }
