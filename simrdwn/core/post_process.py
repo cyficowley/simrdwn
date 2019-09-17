@@ -125,11 +125,11 @@ def get_global_coords(row,
     if np.min(bounds) < 0:
         print("part of bounds < 0:", bounds)
         print(" row:", row)
-        return
+        return [], []
     if (xmax > vis_w) or (ymax > vis_h):
         print("part of bounds > image size:", bounds)
         print(" row:", row)
-        return
+        return [], []
 
     return bounds, coords
 
@@ -234,48 +234,18 @@ def augment_df(df,
     df['Im_Height'] = [float(sl.split('_')[6].split('.')[0])
                        for sl in df['Slice_XY'].values]
 
-    print("  set image path, make sure the image exists...")
-    im_paths_list = []
-    im_roots_update = []
-    for ftmp in df['Image_Root'].values:
-        # get image path
-        im_path = os.path.join(testims_dir_tot, ftmp.strip())
-        if os.path.exists(im_path):
-            im_roots_update.append(os.path.basename(im_path))
-            im_paths_list.append(im_path)
-        # if this path doesn't exist, see if other extensions might work
-        else:
-            found = False
-            for ext in extension_list:
-                im_path_tmp = im_path.split('.')[0] + ext
-                if os.path.exists(im_path_tmp):
-                    im_roots_update.append(os.path.basename(im_path_tmp))
-                    im_paths_list.append(im_path_tmp)
-                    found = True
-                    break
-            if not found:
-                print("im_path not found with test extensions:", im_path)
-                print("   im_path_tmp:", im_path_tmp)
-    # update columns
-    df['Image_Path'] = im_paths_list
-    df['Image_Root'] = im_roots_update
-    # df['Image_Path'] = [os.path.join(testims_dir_tot, f.strip()) for f
-    #                    in df['Image_Root'].values]
-
-    if verbose:
-        print("  Add in global location of each row")
     # if slicing, get global location from filename
     if slice_sizes[0] > 0:
         x0l, x1l, y0l, y1l = [], [], [], []
         bad_idxs = []
         for index, row in df.iterrows():
-            print(row)
             bounds, coords = get_global_coords(
                 row,
                 edge_buffer_test=edge_buffer_test,
                 max_edge_aspect_ratio=max_edge_aspect_ratio,
                 test_box_rescale_frac=test_box_rescale_frac,
                 rotate_boxes=rotate_boxes)
+            print(bounds)
             if len(bounds) == 0 and len(coords) == 0:
                 bad_idxs.append(index)
                 [xmin, xmax, ymin, ymax] = 0, 0, 0, 0
@@ -541,7 +511,7 @@ def refine_df(df, groupby='Image_Path',
                         print("num boxes_all:", len(xmins))
                         print("num good_idxs:", len(good_idxs))
                     if len(boxes) == 0:
-                        print("Error, No boxes detected!")
+                        continue
                     boxes = boxes[good_idxs]
                     scores = scores[good_idxs]
                     df_idxs = df_idxs[good_idxs]
@@ -630,7 +600,7 @@ def refine_df(df, groupby='Image_Path',
 
 
 ###############################################################################
-def plot_refined_df(df, groupby='Image_Path', label_map_dict={}):
+def get_final_data(df, groupby='Image_Path', label_map_dict={}):
 
     print("Running plot_refined_df...")
     t0 = time.time()
@@ -639,42 +609,10 @@ def plot_refined_df(df, groupby='Image_Path', label_map_dict={}):
 
     group = df.groupby(groupby)
     # print_iter = 1
+    all_defects = None
+
     for i, g in enumerate(group):
-
-        img_loc_string = g[0]
-        print("img_loc:", img_loc_string)
-
-        # if '740351_3737289' not in img_loc_string:
-        #    continue
-
         data_all_classes = g[1]
-        # image = cv2.imread(img_loc_string, 1)
-        # we want image as bgr (cv2 format)
-        try:
-            image = cv2.imread(img_loc_string, 1)
-            # tst = image.shape
-            print("  cv2: image.shape:", image.shape)
-        except:
-            img_sk = skimage.io.imread(img_loc_string)
-            # make sure image is h,w,channels (assume less than 20 channels)
-            if (len(img_sk.shape) == 3) and (img_sk.shape[0] < 20):
-                img_mpl = np.moveaxis(img_sk, 0, -1)
-            else:
-                img_mpl = img_sk
-            image = cv2.cvtColor(img_mpl, cv2.COLOR_RGB2BGR)
-            print("  skimage: image.shape:", image.shape)
-
-        # image_root = data_all_classes['Image_Root'].values[0]
-        im_root = os.path.basename(img_loc_string)
-        im_root_no_ext, ext = im_root.split('.')
-        outfile = os.path.join(outdir, im_root_no_ext + '_thresh='
-                               + str(plot_thresh) + '.' + ext)
-
-        if (i % print_iter) == 0 and verbose:
-            print(i+1, "/", len(group), "Processing image:", img_loc_string)
-            print("  num boxes:", len(data_all_classes))
-        # if verbose:
-            print("  image.shape:", image.shape)
 
         xmins = data_all_classes['Xmin_Glob'].values
         ymins = data_all_classes['Ymin_Glob'].values
@@ -682,8 +620,11 @@ def plot_refined_df(df, groupby='Image_Path', label_map_dict={}):
         ymaxs = data_all_classes['Ymax_Glob'].values
         classes = data_all_classes['Category']
         scores = data_all_classes['Prob']
-
-        return np.stack((ymins, xmins, ymins - ymaxs, xmins - xmaxs, classes, scores), axis=1)
+        if(all_defects is None):
+            all_defects = np.stack((ymins, xmins, (ymaxs - ymins) / 2, (xmaxs - xmins) / 2, classes, scores), axis=1)
+        else:
+            all_defects = np.concatenate((all_defects, np.stack((ymins, xmins, (ymaxs - ymins) / 2, (xmaxs - xmins) / 2, classes, scores), axis=1)), axis=0)
+    return all_defects
 
 ###############################################################################
 def non_max_suppression(boxes, probs=[], overlapThresh=0.5):

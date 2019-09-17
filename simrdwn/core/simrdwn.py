@@ -26,7 +26,6 @@ import post_process
 import add_geo_coords
 import slice_im
 
-sys.stdout.flush()
 
 ###############################################################################
 def yolt_command(yolt_cfg_file_tot='',
@@ -112,7 +111,7 @@ def run_test(framework='YOLT3',
     """Evaluate multiple large images"""
 
     t0 = time.time()
-    os.system(infer_cmd)
+    # os.system(infer_cmd)
     t1 = time.time()
 
     yolt_test_classes_files = []
@@ -134,7 +133,7 @@ def run_test(framework='YOLT3',
 ###############################################################################
 def execute(args):
     
-    split_test_im(img=args["image"], test_list_loc=args["test_list_loc"], temp_dir=args["temp_dir"], slice_sizes=args["slice_sizes"], slice_overlap=args["slice_overlap"])
+    # split_test_im(img=args["image"], test_list_loc=args["test_list_loc"], temp_dir=args["temp_dir"], slice_sizes=args["slice_sizes"], slice_overlap=args["slice_overlap"])
 
 
     yolt_cmd = yolt_command(yolt_cfg_file_tot=args["yolt_cfg_file_tot"],
@@ -152,30 +151,24 @@ def execute(args):
                             edge_buffer_test=args["edge_buffer_test"],
                             results_dir=args["temp_dir"])
 
-    if len(df_tot) == 0:
-        print("No detections found!")
-    else:
-        # save to csv
-        df_tot.to_csv(args["val_df_path_aug"], index=False)
 
     # refine for each plot_thresh (if we have detections)
     if len(df_tot) > 0:
-        for plot_thresh_tmp in args["plot_thresh"]:
-            groupby = 'Image_Path'
-            groupby_cat = 'Category'
-            df_refine = post_process.refine_df(df_tot,
-                                                groupby=groupby,
-                                                groupby_cat=groupby_cat,
-                                                nms_overlap_thresh=args["nms_overlap_thresh"],
-                                                plot_thresh=plot_thresh_tmp,
-                                                verbose=False)
-            
-            return post_process.plot_refined_df(df_refine, groupby=groupby, label_map_dict=args["label_map_dict_tot"])
+        groupby = 'Loc_Tmp'
+        groupby_cat = 'Category'
+        df_refine = post_process.refine_df(df_tot,
+                                            groupby=groupby,
+                                            groupby_cat=groupby_cat,
+                                            nms_overlap_thresh=0.5,
+                                            plot_thresh=args["confidence_threshold"],
+                                            verbose=False)
+
+        return post_process.get_final_data(df_refine, groupby=groupby, label_map_dict=args["label_map_dict"])
 
 
 def main():
     args = { 
-        "image": cv2.imread("/simrdwn/new_data/test_data/MATA128018587.png"),
+        "image": cv2.imread("/simrdwn/new_data/test_data/MATA128018591.png"),
         "slice_sizes": [824],
         "framework": "yolt3",
         "yolt_cfg_file_tot": "/simrdwn/yolt3/cfg/yolov3.cfg",
@@ -186,7 +179,8 @@ def main():
         "label_map_dict": {0:"dank", 1:"yeet", 2:"yote"},
         "edge_buffer_test": 1,
         "slice_overlap": 0.2,
-        "temp_dir":"/simrdwn/temp"
+        "temp_dir":"/simrdwn/temp",
+        "confidence_threshold":0.2
     }
 
     execute(args)
