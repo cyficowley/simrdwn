@@ -25,6 +25,7 @@ import utils
 import post_process
 import add_geo_coords
 import slice_im
+import base64
 
 
 ###############################################################################
@@ -111,7 +112,7 @@ def run_test(framework='YOLT3',
     """Evaluate multiple large images"""
 
     t0 = time.time()
-    # os.system(infer_cmd)
+    os.system(infer_cmd)
     t1 = time.time()
 
     yolt_test_classes_files = []
@@ -133,7 +134,7 @@ def run_test(framework='YOLT3',
 ###############################################################################
 def execute(args):
     
-    # split_test_im(img=args["image"], test_list_loc=args["test_list_loc"], temp_dir=args["temp_dir"], slice_sizes=args["slice_sizes"], slice_overlap=args["slice_overlap"])
+    split_test_im(img=args["image"], test_list_loc=args["test_list_loc"], temp_dir=args["temp_dir"], slice_sizes=args["slice_sizes"], slice_overlap=args["slice_overlap"])
 
 
     yolt_cmd = yolt_command(yolt_cfg_file_tot=args["yolt_cfg_file_tot"],
@@ -170,9 +171,9 @@ class GetDefects(object):
     def on_post(self, req, resp):
         query = falcon.uri.decode(req.query_string)
         queries = query.split("&")
-        b64 = req.stream.read()
-        encoded_data = b64.split(',')[1]
-        nparr = np.fromstring(encoded_data.decode('base64'), np.uint8)
+        body = req.stream.read()
+        b64 = json.loads(body)
+        nparr = np.fromstring(base64.b64decode(b64), np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR + cv2.IMREAD_IGNORE_ORIENTATION)
 
         args = { 
@@ -194,7 +195,7 @@ class GetDefects(object):
         output_array = execute(args)
 
         resp.status = falcon.HTTP_200
-        resp.body = (json.dumps(output_array))
+        resp.body = (json.dumps(output_array.tolist()))
 
 
 app = falcon.API()
