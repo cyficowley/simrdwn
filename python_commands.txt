@@ -101,7 +101,7 @@ python /simrdwn/simrdwn/core/simrdwn.py \
 	--weight_file /simrdwn/yolt3/input_weights/yolov3-tiny.weights \
 	--yolt_train_images_list_file /simrdwn/new_data/train.txt \
 	--label_map_path /simrdwn/new_data/class_labels.pbtxt \
-	--max_batches 1300 \
+	--max_batches 650 \
 	--batch_size 16 \
 	--subdivisions 16 \
 	--boxes_per_grid 9
@@ -113,8 +113,8 @@ python /simrdwn/simrdwn/core/simrdwn.py \
   --outname yolt_test_combined \
   --label_map_path /simrdwn/new_data/class_labels.pbtxt \
   --train_model_path TODO \
-  --weight_file /simrdwn/results/train_yolt3_yolt_combined_2019_09_14_01-03-58/yolov3_final.weights \
-  --yolt_cfg_file /simrdwn/yolt3/cfg/yolov3.cfg \
+  --weight_file /simrdwn/results/train_yolt3_yolt_combined_2019_09_17_08-57-30/yolov3-tiny_final.weights \
+  --yolt_cfg_file /simrdwn/yolt3/cfg/yolov3-tiny.cfg \
   --testims_dir /simrdwn/new_data/test_data \
   --keep_test_slices 0 \
   --test_slice_sep __ \
@@ -122,8 +122,100 @@ python /simrdwn/simrdwn/core/simrdwn.py \
   --edge_buffer_test 1 \
   --test_box_rescale_frac 1 \
   --plot_thresh_str 0.2 \
-  --slice_sizes_str 832 \
+  --slice_sizes_str 416 \
   --slice_overlap 0.2 \
   --alpha_scaling 1 \
   --show_labels 1 \
   --boxes_per_grid 9
+
+
+
+
+python /simrdwn2/simrdwn/core/simrdwn.py   --framework yolt3   --mode test   --outname yolt_test_combined   --label_map_path /simrdwn2/new_data/class_labels.pbtxt   --train_model_path TODO   --weight_file /simrdwn2/results/train_yolt3_yolt_combined_2019_09_17_08-57-30/yolov3-tiny_final.weights   --yolt_cfg_file /simrdwn2/yolt3/cfg/yolov3-tiny.cfg   --testims_dir /simrdwn2/new_data/test_data   --keep_test_slices 0   --test_slice_sep __   --test_make_legend_and_title 1   --edge_buffer_test 1   --test_box_rescale_frac 1   --plot_thresh_str 0.2   --slice_sizes_str 416   --slice_overlap 0.2   --alpha_scaling 1   --show_labels 1   --boxes_per_grid 9
+
+
+
+
+python /simrdwn/simrdwn/core/simrdwn.py --framework yolt3 --mode train --outname tiny_elds --yolt_cfg_file /simrdwn/yolt3/cfg/yolov3-tiny.cfg --weight_file /simrdwn/yolt3/int_weights/yolov3-tiny.weights --yolt_train_images_list_file /simrdwn/data/ELDS/train.txt --label_map_path /simrdwn/data/ELDS/class_labels.pbtxt --max_batches 650 --batch_size 16 --subdivisions 16 --boxes_per_grid 9 --yolt_object_labels_str ELDS
+
+
+
+
+
+
+python /simrdwn/simrdwn/core/simrdwn.py --framework yolt3 --mode train --outname tiny_cr --yolt_cfg_file /simrdwn/yolt3/cfg/yolov3-tiny.cfg --weight_file /simrdwn/yolt3/input_weights/yolov3-tiny.weights --yolt_train_images_list_file /simrdwn/data/CR/train.txt --label_map_path /simrdwn/data/CR/class_labels.pbtxt --max_batches 600 --batch_size 16 --subdivisions 16 --boxes_per_grid 9 --yolt_object_labels_str CR
+python /simrdwn/simrdwn/core/simrdwn.py --framework yolt3 --mode train --outname tiny_ep --yolt_cfg_file /simrdwn/yolt3/cfg/yolov3-tiny.cfg --weight_file /simrdwn/yolt3/input_weights/yolov3-tiny.weights --yolt_train_images_list_file /simrdwn/data/EP/train.txt --label_map_path /simrdwn/data/EP/class_labels.pbtxt --max_batches 1300 --batch_size 16 --subdivisions 16 --boxes_per_grid 9 --yolt_object_labels_str EP
+python /simrdwn/simrdwn/core/simrdwn.py --framework yolt3 --mode train --outname tiny_elds --yolt_cfg_file /simrdwn/yolt3/cfg/yolov3-tiny.cfg --weight_file /simrdwn/yolt3/input_weights/yolov3-tiny.weights --yolt_train_images_list_file /simrdwn/data/ELDS/train.txt --label_map_path /simrdwn/data/ELDS/class_labels.pbtxt --max_batches 650 --batch_size 16 --subdivisions 16 --boxes_per_grid 9 --yolt_object_labels_str ELDS
+
+
+
+python /simrdwn2/simrdwn/core/simrdwn.py \
+   --framework yolt3 \
+   --mode test \
+   --outname yolt_test_ep \
+   --label_map_path /simrdwn/data/CR/class_labels.pbtxt \
+   --train_model_path TODO \
+   --weight_file /simrdwn/results/train_yolt3_tiny_ep_2019_10_04_02-50-25/yolov3-tiny_final.weights \
+   --yolt_cfg_file /simrdwn/yolt3/cfg/yolov3-tiny.cfg \
+   --testims_dir /simrdwn/data/EP/validation \
+   --keep_test_slices 0 \
+   --test_slice_sep __ \
+   --test_make_legend_and_title 1 \
+   --edge_buffer_test 1 \
+   --test_box_rescale_frac 1 \
+   --plot_thresh_str 0.2 \
+   --slice_sizes_str 416 \
+   --slice_overlap 0.2 \
+   --yolt_object_labels_str CR \
+   --alpha_scaling 1 \
+   --show_labels 1 \
+   --boxes_per_grid 9
+
+
+
+
+
+python /simrdwn2/simrdwn/core/simrdwn.py \
+   --framework yolt3 \
+   --mode test \
+   --outname yolt_test_elds \
+   --label_map_path /simrdwn/data/ELDS/class_labels.pbtxt \
+   --train_model_path TODO \
+   --weight_file /simrdwn/results/train_yolt3_tiny_elds_2019_10_04_03-10-05/yolov3-tiny_final.weights \
+   --yolt_cfg_file /simrdwn/yolt3/cfg/yolov3-tiny.cfg \
+   --testims_dir /simrdwn/data/ELDS/validation \
+   --keep_test_slices 0 \
+   --test_slice_sep __ \
+   --test_make_legend_and_title 1 \
+   --edge_buffer_test 1 \
+   --test_box_rescale_frac 1 \
+   --plot_thresh_str 0.05 \
+   --slice_sizes_str 416 \
+   --slice_overlap 0.2 \
+   --yolt_object_labels_str ELDS \
+   --alpha_scaling 1 \
+   --show_labels 1 \
+   --boxes_per_grid 9
+
+
+python /simrdwn2/simrdwn/core/simrdwn.py \
+   --framework yolt3 \
+   --mode test \
+   --outname yolt_test_cr \
+   --label_map_path /simrdwn/data/CR/class_labels.pbtxt \
+   --train_model_path TODO \
+   --weight_file /simrdwn/results/train_yolt3_tiny_cr_2019_10_03_23-56-41/yolov3-tiny_final.weights \
+   --yolt_cfg_file /simrdwn/yolt3/cfg/yolov3-tiny.cfg \
+   --testims_dir /simrdwn/data/CR/validation \
+   --keep_test_slices 0 \
+   --test_slice_sep __ \
+   --test_make_legend_and_title 1 \
+   --edge_buffer_test 1 \
+   --test_box_rescale_frac 1 \
+   --plot_thresh_str 0.05 \
+   --slice_sizes_str 416 \
+   --slice_overlap 0.2 \
+   --yolt_object_labels_str CR \
+   --alpha_scaling 1 \
+   --show_labels 1 \
+   --boxes_per_grid 9
